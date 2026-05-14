@@ -4,6 +4,36 @@
 
 pnpm monorepo. Two apps: `apps/web` (Vue 3 + Vite) and `apps/api` (NestJS). Backing services (Postgres, Redis, LiteLLM) run in docker-compose locally and via Nomad in prod. Secrets come from Vault in prod, `.env.local` in dev.
 
+## Development Setup
+
+### Prerequisites
+- Node.js 20+
+- pnpm 9+
+- Docker + Docker Compose
+
+### Running Locally
+
+1. Start backing services:
+```bash
+docker-compose up -d
+```
+
+2. Run apps in two terminals:
+```bash
+pnpm --filter api dev     # NestJS on :3000
+pnpm --filter web dev     # Vite on :5173
+```
+
+Health check:
+```bash
+curl http://localhost:3000/health
+# → { "status": "ok", "postgres": true, "redis": true }
+```
+
+### Key Commands
+- Run migrations: `pnpm --filter api migration:run`
+- Generate migration: `pnpm --filter api migration:generate -- src/migrations/MigrationName`
+
 ## Stack Conventions
 
 ### Frontend (`apps/web`)
@@ -114,12 +144,40 @@ Generate a migration after entity changes:
 pnpm --filter api migration:generate -- src/migrations/MigrationName
 ```
 
+## Database
+
+Postgres via TypeORM. Migrations live in `apps/api/src/migrations/`. Run migrations:
+
+```bash
+pnpm --filter api migration:run
+```
+
+Generate a migration after entity changes:
+
+```bash
+pnpm --filter api migration:generate -- src/migrations/MigrationName
+```
+
 ## Infra (Prod Only)
 
 - Nomad job specs: `infra/nomad/*.nomad`
 - Vault secret path: `secret/mortgage/api` — keys: `ANTHROPIC_KEY`, `OPENAI_KEY`, `DB_PASSWORD`, `FRED_API_KEY`, `REDIS_URL`
 - Traefik routes: `api.largelanguage.mortgage` → `mortgage-api` Consul service
 - Frontend: Cloudflare Pages — `pnpm --filter web build` output dir `apps/web/dist`
+
+## Environment Variables
+
+See `.env.example` for the full list. Minimum for local dev:
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Postgres connection string |
+| `REDIS_URL` | Redis connection string |
+| `LITELLM_URL` | LiteLLM proxy URL (default: `http://localhost:4000`) |
+| `ANTHROPIC_KEY` | Anthropic API key (for LiteLLM) |
+| `FRED_API_KEY` | Federal Reserve FRED API key (free at fred.stlouisfed.org) |
+
+In prod, all secrets come from Vault — see `infra/vault/`.
 
 ## Phase Docs
 
@@ -128,3 +186,7 @@ Detailed step-by-step implementation guides:
 - [Phase 2 — Core Features](docs/phase-2-core-features.md)
 - [Phase 3 — Rate Tracker](docs/phase-3-rate-tracker.md)
 - [Phase 4 — Deploy](docs/phase-4-deploy.md)
+
+## Data Sources
+
+- **Mortgage rates**: [FRED API](https://fred.stlouisfed.org) — `MORTGAGE30US`, `MORTGAGE15US`, `MORTGAGE5US` series (Freddie Mac PMMS, published weekly on Thursdays). Free, no scraping.

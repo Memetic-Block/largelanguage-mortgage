@@ -1,0 +1,22 @@
+model_list:
+  - model_name: mortgage-advisor
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_KEY
+
+  - model_name: mortgage-advisor-oai
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_KEY
+
+  - model_name: mortgage-advisor-local
+    litellm_params:
+      model: ollama/llama3
+      api_base: http://host.docker.internal:11434
+
+general_settings:
+  allow_user_auth: true
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 120

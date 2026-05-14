@@ -22,9 +22,9 @@ Four independent features, each in its own sub-phase. They can be built in order
 
 ## Phase 2 complete when
 
-- [ ] `POST /waitlist` and `GET /waitlist/count` work
-- [ ] Landing page email form submits and shows success
-- [ ] Calculator view updates reactively with no API calls
-- [ ] `GET /chat/stream` streams a response from LiteLLM
-- [ ] Chat view renders streamed tokens progressively
-- [ ] BYOK key stored in localStorage, passed through to LiteLLM
+- [x] `POST /waitlist` and `GET /waitlist/count` work
+- [x] Landing page email form submits and shows success
+- [x] Calculator view updates reactively with no API calls
+- [x] `GET /chat/stream` streams a response from LiteLLM
+- [x] Chat view renders streamed tokens progressively
+- [x] BYOK key stored in localStorage, passed through to LiteLLM
