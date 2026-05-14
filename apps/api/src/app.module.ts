@@ -8,6 +8,7 @@ import { HealthController } from './health/health.controller';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { LlmModule } from './llm/llm.module';
 import { ChatModule } from './chat/chat.module';
+import { RatesModule } from './rates/rates.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ChatModule } from './chat/chat.module';
     WaitlistModule,
     LlmModule,
     ChatModule,
+    RatesModule,
   ],
   controllers: [AppController, HealthController, LlmController],
   providers: [AppService],
