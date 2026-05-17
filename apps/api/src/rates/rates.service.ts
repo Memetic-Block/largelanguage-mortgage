@@ -96,4 +96,60 @@ export class RatesService {
 
     return snapshot
   }
+
+  async getCurrentRates(): Promise<Record<string, { rate: number; points: number; date: string }>> {
+    const cacheKey = 'current-rates-snapshot'
+    
+    // Try to get from cache first
+    if (this.redisClient) {
+      try {
+        const cached = await this.redisClient.get(cacheKey)
+        if (cached) {
+          this.logger.log('Returning cached rates snapshot')
+          return JSON.parse(cached)
+        }
+      } catch (error) {
+        this.logger.warn('Redis cache read failed:', error)
+      }
+    }
+
+    const loanTypes = ['30yr_fixed', '15yr_fixed', '5_1_arm']
+    const snapshot: Record<string, { rate: number; points: number; date: string }> = {}
+
+    for (const loanType of loanTypes) {
+      const latest = await this.rateRepo.findOne({
+        where: { loanType },
+        order: { date: 'DESC' },
+      })
+      if (latest) {
+        snapshot[loanType] = { rate: Number(latest.rate), points: Number(latest.points), date: latest.date }
+      }
+    }
+
+    // Cache the result
+    if (this.redisClient) {
+      try {
+        await this.redisClient.setex(cacheKey, 300, JSON.stringify(snapshot)) // Cache for 5 minutes
+        this.logger.log('Cached rates snapshot')
+      } catch (error) {
+        this.logger.warn('Redis cache write failed:', error)
+      }
+    }
+
+    return snapshot
+  }
+
+  async getHistory(loanType: string, weeks: number): Promise<MortgageRate[]> {
+    return this.rateRepo.find({
+      where: { loanType },
+      order: { date: 'ASC' },             // ASC for charting (chronological)
+      take: Math.min(weeks, 156),         // cap at 3 years
+    })
+  }
+
+  async getLatestCommentary(): Promise<RateCommentary | null> {
+    return this.commentaryRepo.findOne({
+      order: { rateDate: 'DESC' },
+    })
+  }
 }

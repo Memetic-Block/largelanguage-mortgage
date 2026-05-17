@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
+import express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(express()));
@@ -11,6 +11,15 @@ async function bootstrap() {
   // Mount BullBoard dashboard
   app.use('/admin/queues', BullBoardModule);
   
-  await app.listen(3000);
+  await app.listen(process.env.PORT ?? 3000);
+
+  console.log(`API is running on port ${process.env.PORT ?? 3000}`);
 }
-bootstrap();
+bootstrap()
+  .then(() => {
+    console.log(`LargeLanguageMortgage API is running on port ${process.env.PORT ?? 3000}`)
+  })
+  .catch((error) => {
+    console.error('Error starting LargeLanguageMortgage API:', error)
+    process.exit(1)
+  })

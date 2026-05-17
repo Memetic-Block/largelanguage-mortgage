@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import LandingHero from '../components/LandingHero.vue'
+import RateSnapshot from '../components/RateSnapshot.vue'
+import LandingFooter from '../components/LandingFooter.vue'
 </script>
 
 <template>
@@ -26,17 +29,3 @@
     <LandingFooter />
   </div>
 </template>
-
-<script lang="ts">
-import LandingHero from './components/LandingHero.vue'
-import RateSnapshot from './components/RateSnapshot.vue'
-import LandingFooter from './components/LandingFooter.vue'
-
-export default {
-  components: {
-    LandingHero,
-    RateSnapshot,
-    LandingFooter
-  }
-}
-</script>

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Sse, Headers, Query, HttpCode, Param, ParseUUIDPipe } from '@nestjs/common'
+import { Controller, Post, Get, Sse, Headers, Query, HttpCode, Param, ParseUUIDPipe, Header } from '@nestjs/common'
 import { ChatService } from './chat.service'
 import { StreamMessageDto } from './stream-message.dto'
 import { Observable } from 'rxjs'
@@ -30,6 +30,8 @@ export class ChatController {
             dto.message,
             dto.model ?? 'mortgage-advisor',
             apiKey,
+            dto.customModelName,
+            dto.customApiBaseUrl,
           )) {
             subscriber.next({ data: { chunk } } as MessageEvent)
           }

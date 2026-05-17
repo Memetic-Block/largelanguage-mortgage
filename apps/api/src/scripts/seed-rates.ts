@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { NestFactory } from '@nestjs/core'
-import { RatesModule } from './src/rates/rates.module'
-import { RatesService } from './src/rates/rates.service'
+import { RatesModule } from '../rates/rates.module'
+import { RatesService } from '../rates/rates.service'
 import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {

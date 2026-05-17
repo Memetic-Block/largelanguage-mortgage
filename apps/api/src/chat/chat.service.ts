@@ -36,6 +36,8 @@ export class ChatService {
     userMessage: string,
     model: string,
     apiKey?: string,
+    customModelName?: string,
+    customApiBaseUrl?: string,
   ): AsyncGenerator<string> {
     const conv = await this.convRepo.findOne({
       where: { sessionId },
@@ -56,7 +58,7 @@ export class ChatService {
 
     // Stream and collect for persistence
     let fullResponse = ''
-    for await (const chunk of this.llm.streamChat(messages, model, apiKey)) {
+    for await (const chunk of this.llm.streamChat(messages, model, apiKey, customModelName, customApiBaseUrl)) {
       fullResponse += chunk
       yield chunk
     }

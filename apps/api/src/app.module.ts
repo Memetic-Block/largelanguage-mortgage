@@ -9,6 +9,8 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 import { LlmModule } from './llm/llm.module';
 import { ChatModule } from './chat/chat.module';
 import { RatesModule } from './rates/rates.module';
+import { LlmController } from './llm/llm.controller';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -21,13 +23,13 @@ import { RatesModule } from './rates/rates.module';
         autoLoadEntities: true,
         migrations: ['src/migrations/*{.ts,.js}'],
       }),
-      inject: [],
+      inject: [ConfigService],
     }),
     BullModule.forRootAsync({
       useFactory: (configService) => ({
         redis: configService.get('REDIS_URL'),
       }),
-      inject: [],
+      inject: [ConfigService],
     }),
     WaitlistModule,
     LlmModule,

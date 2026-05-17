@@ -19,7 +19,7 @@ export function useChat() {
     sessionId.value = data.sessionId
   }
 
-  async function send(content: string, model: string, apiKey?: string) {
+  async function send(content: string, model: string, apiKey?: string, customModelName?: string, customApiBaseUrl?: string) {
     if (!sessionId.value) await init()
     if (streaming.value) return
 
@@ -40,6 +40,12 @@ export function useChat() {
       message: content,
       model,
     })
+
+    // For custom local models, we need to pass additional parameters
+    if (model === 'mortgage-advisor-custom-local') {
+      if (customModelName) params.append('customModelName', customModelName)
+      if (customApiBaseUrl) params.append('customApiBaseUrl', customApiBaseUrl)
+    }
 
     const headers: Record<string, string> = {}
     if (apiKey) headers['X-API-Key'] = apiKey

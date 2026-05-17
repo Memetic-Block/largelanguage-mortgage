@@ -8,6 +8,9 @@ const input = ref('')
 const selectedModel = ref('mortgage-advisor')
 const byokKey = ref(localStorage.getItem('llm_api_key') ?? '')
 const showByok = ref(false)
+const showCustomLocal = ref(false)
+const customModelName = ref('')
+const customApiBaseUrl = ref('http://localhost:11434')
 
 const MODELS = [
   { value: 'mortgage-advisor', label: 'Claude (default)' },
@@ -30,7 +33,19 @@ async function submit() {
   const msg = input.value.trim()
   if (!msg || streaming.value) return
   input.value = ''
-  await send(msg, selectedModel.value, byokKey.value || undefined)
+  
+  // Handle custom local model parameters
+  let model = selectedModel.value
+  let customModelName = undefined
+  let customApiBaseUrl = undefined
+  
+  if (selectedModel.value === 'mortgage-advisor-custom-local') {
+    model = 'mortgage-advisor-custom-local'
+    customModelName = customModelName.value
+    customApiBaseUrl = customApiBaseUrl.value
+  }
+  
+  await send(msg, model, byokKey.value || undefined, customModelName, customApiBaseUrl)
 }
 
 // Auto-scroll to bottom on new content
@@ -64,6 +79,31 @@ watch(messages, async () => {
         @change="saveByokKey"
       />
       <span class="text-xs text-gray-400 self-center">Stored locally only, never sent to our servers</span>
+    </div>
+
+    <!-- Custom Local Model Configuration -->
+    <div v-if="selectedModel === 'mortgage-advisor-custom-local'" class="p-3 bg-gray-50 border-b">
+      <div class="flex flex-col gap-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Model Name</label>
+          <input
+            v-model="customModelName"
+            type="text"
+            placeholder="e.g., llama3, mistral, gemma"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">API Base URL</label>
+          <input
+            v-model="customApiBaseUrl"
+            type="text"
+            placeholder="e.g., http://localhost:11434"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+        </div>
+        <p class="text-xs text-gray-500">Configure your custom Ollama/vLLM model endpoint</p>
+      </div>
     </div>
 
     <!-- Messages -->
