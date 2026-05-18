@@ -13,7 +13,7 @@ export class RatesProcessor {
   async handleFetchRates(job: Job) {
     this.logger.log('Starting fetch-rates job');
     try {
-      const result = await this.ratesService.buildCurrentSnapshot();
+      const result = await this.ratesService.getCurrentRates();
       this.logger.log(`Fetch-rates job completed successfully: ${JSON.stringify(result)}`);
       return result;
     } catch (error) {

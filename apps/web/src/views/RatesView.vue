@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useRatesStore } from '../stores/rates'
+import { useChatStore } from '../stores/chat'
 import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js'
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
 const ratesStore = useRatesStore()
+const chatStore = useChatStore()
+const router = useRouter()
 
-const chartData = {
-  labels: [] as string[],
+const chartData = computed(() => ({
+  labels: ratesStore.history.map((h) => h.date),
   datasets: [
     {
       label: '30-yr fixed',
-      data: [] as number[],
+      data: ratesStore.history.map((h) => h.rate),
       borderColor: '#2563eb',
       backgroundColor: 'rgba(37, 99, 235, 0.1)',
       tension: 0.3,
       fill: true,
     },
   ],
-}
+}))
 
 const chartOptions = {
   responsive: true,
@@ -31,18 +35,21 @@ const chartOptions = {
   },
   scales: {
     y: {
-      beginAtZero: false,
-      ticks: { callback: (value: number) => `${value}%` },
+      ticks: { callback: (_v: number | string) => String(_v) + '%' },
     },
   },
+} as const
+
+function askAboutRates() {
+  const rate = ratesStore.currentRates?.['30yr_fixed']?.rate
+  chatStore.seedMessage = rate
+    ? `Current 30-year fixed rates are around ${rate}%. What does this mean for someone shopping for a home right now?`
+    : 'Can you explain what current mortgage rates mean for home buyers?'
+  router.push('/chat')
 }
 
 onMounted(async () => {
   await ratesStore.refreshAll()
-  if (ratesStore.history.length > 0) {
-    chartData.labels = ratesStore.history.map((h) => h.date)
-    chartData.datasets[0].data = ratesStore.history.map((h) => h.rate)
-  }
 })
 </script>
 
@@ -89,9 +96,9 @@ onMounted(async () => {
     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-8 text-center text-white">
       <h2 class="text-2xl font-bold mb-2">Ready to explore your options?</h2>
       <p class="mb-4">Chat with our AI mortgage advisor for personalized guidance.</p>
-      <router-link to="/chat" class="inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
-        Start Chat
-      </router-link>
+      <button @click="askAboutRates" class="inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
+        What do these rates mean for me?
+      </button>
     </div>
   </div>
 </template>

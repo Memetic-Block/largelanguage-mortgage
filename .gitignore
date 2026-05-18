@@ -4,3 +4,4 @@ dist/
 *.env.local
 .dev-debug/
 
+opencode.json

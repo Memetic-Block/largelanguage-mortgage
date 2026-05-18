@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { MortgageRate } from './entities/mortgage-rate.entity'
@@ -8,7 +8,7 @@ import { fetchFredSeries, FRED_SERIES } from './fred.client'
 import { Redis } from 'ioredis'
 
 @Injectable()
-export class RatesService {
+export class RatesService implements OnModuleDestroy {
   private readonly logger = new Logger(RatesService.name)
   private redisClient: Redis
 
@@ -53,48 +53,6 @@ export class RatesService {
     }
 
     return stored
-  }
-
-  async buildCurrentSnapshot(): Promise<Record<string, { rate: number; points: number; date: string }>> {
-    const cacheKey = 'current-rates-snapshot'
-    
-    // Try to get from cache first
-    if (this.redisClient) {
-      try {
-        const cached = await this.redisClient.get(cacheKey)
-        if (cached) {
-          this.logger.log('Returning cached rates snapshot')
-          return JSON.parse(cached)
-        }
-      } catch (error) {
-        this.logger.warn('Redis cache read failed:', error)
-      }
-    }
-
-    const loanTypes = ['30yr_fixed', '15yr_fixed', '5_1_arm']
-    const snapshot: Record<string, { rate: number; points: number; date: string }> = {}
-
-    for (const loanType of loanTypes) {
-      const latest = await this.rateRepo.findOne({
-        where: { loanType },
-        order: { date: 'DESC' },
-      })
-      if (latest) {
-        snapshot[loanType] = { rate: Number(latest.rate), points: Number(latest.points), date: latest.date }
-      }
-    }
-
-    // Cache the result
-    if (this.redisClient) {
-      try {
-        await this.redisClient.setex(cacheKey, 300, JSON.stringify(snapshot)) // Cache for 5 minutes
-        this.logger.log('Cached rates snapshot')
-      } catch (error) {
-        this.logger.warn('Redis cache write failed:', error)
-      }
-    }
-
-    return snapshot
   }
 
   async getCurrentRates(): Promise<Record<string, { rate: number; points: number; date: string }>> {
@@ -151,5 +109,11 @@ export class RatesService {
     return this.commentaryRepo.findOne({
       order: { rateDate: 'DESC' },
     })
+  }
+
+  onModuleDestroy() {
+    if (this.redisClient) {
+      this.redisClient.quit()
+    }
   }
 }
