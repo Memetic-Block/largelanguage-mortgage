@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useChat } from '../composables/useChat'
+import { useChatStore } from '../stores/chat'
 
-const { messages, streaming, error, send } = useChat()
+const { messages, streaming, error, send, sessionId, init } = useChat()
+void sessionId
+const chatStore = useChatStore()
 
 const input = ref('')
 const selectedModel = ref('mortgage-advisor')
@@ -11,11 +14,15 @@ const showByok = ref(false)
 const showCustomLocal = ref(false)
 const customModelName = ref('')
 const customApiBaseUrl = ref('http://localhost:11434')
+const messagesEl = ref<HTMLElement | null>(null)
+let initResolve: (() => void) | null = null
+let initPromise = new Promise<void>((resolve) => { initResolve = resolve })
 
 const MODELS = [
   { value: 'mortgage-advisor', label: 'Claude (default)' },
   { value: 'mortgage-advisor-oai', label: 'GPT-4o' },
   { value: 'mortgage-advisor-local', label: 'Local (Ollama)' },
+  { value: 'mortgage-advisor-custom-local', label: 'Custom Local' },
 ]
 
 const STARTERS = [
@@ -29,30 +36,41 @@ function saveByokKey() {
   localStorage.setItem('llm_api_key', byokKey.value)
 }
 
+async function handleMessage(msg: string, model?: string) {
+  const m = model ?? selectedModel.value
+  await initPromise
+  await send(msg, m, byokKey.value || undefined)
+}
+
 async function submit() {
   const msg = input.value.trim()
   if (!msg || streaming.value) return
   input.value = ''
-  
-  // Handle custom local model parameters
-  let model = selectedModel.value
-  let customModelName = undefined
-  let customApiBaseUrl = undefined
-  
-  if (selectedModel.value === 'mortgage-advisor-custom-local') {
-    model = 'mortgage-advisor-custom-local'
-    customModelName = customModelName.value
-    customApiBaseUrl = customApiBaseUrl.value
-  }
-  
-  await send(msg, model, byokKey.value || undefined, customModelName, customApiBaseUrl)
+  await handleMessage(msg)
 }
 
 // Auto-scroll to bottom on new content
 watch(messages, async () => {
   await nextTick()
-  messagesEl.value?.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
+  messagesEl.value?.scrollTo({ top: messagesEl.value!.scrollHeight, behavior: 'smooth' })
 }, { deep: true })
+
+onMounted(async () => {
+  await init()
+  initResolve?.()
+  initResolve = null
+  initPromise = Promise.resolve()
+  if (chatStore.seedMessage) {
+    const msg = chatStore.seedMessage
+    chatStore.seedMessage = null
+    await handleMessage(msg, selectedModel.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  initResolve?.()
+  initResolve = null
+})
 </script>
 
 <template>
@@ -82,7 +100,7 @@ watch(messages, async () => {
     </div>
 
     <!-- Custom Local Model Configuration -->
-    <div v-if="selectedModel === 'mortgage-advisor-custom-local'" class="p-3 bg-gray-50 border-b">
+    <div v-if="showCustomLocal && selectedModel === 'mortgage-advisor-custom-local'" class="p-3 bg-gray-50 border-b">
       <div class="flex flex-col gap-2">
         <div>
           <label class="block text-sm font-medium text-gray-700">Model Name</label>
@@ -115,7 +133,7 @@ watch(messages, async () => {
           v-for="q in STARTERS"
           :key="q"
           class="text-left p-3 rounded-lg border hover:bg-blue-50 text-sm"
-          @click="send(q, selectedModel, byokKey || undefined)"
+          @click="handleMessage(q)"
         >
           {{ q }}
         </button>

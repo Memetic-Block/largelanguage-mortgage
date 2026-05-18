@@ -13,7 +13,7 @@ export class RatesScheduler {
   async handleWeeklyRateUpdate() {
     this.logger.log('Starting weekly rate update cron job');
     try {
-      const result = await this.ratesService.buildCurrentSnapshot();
+      const result = await this.ratesService.getCurrentRates();
       this.logger.log(`Weekly rate update completed successfully: ${JSON.stringify(result)}`);
     } catch (error) {
       this.logger.error('Error in weekly rate update cron job:', error);
